@@ -2,28 +2,14 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
 const ActivityService = require('../services/ActivityService');
+const Company = require('../models/Company');
+const CompanyInfo = require('../models/CompanyInfo');
 const { SuccessResponse, ErrorResponse } = require('../utils/Response');
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
         expiresIn: '30d',
     });
-};
-
-const flattenPermissions = (role) => {
-    const permissions = [];
-    if (role && role.permissions) {
-        role.permissions.forEach(p => {
-            if (p.permission && p.actions) {
-                const name = p.permission.permissionName;
-                if (p.actions.create) permissions.push(`${name}_CREATE`);
-                if (p.actions.read) permissions.push(`${name}_READ`);
-                if (p.actions.update) permissions.push(`${name}_UPDATE`);
-                if (p.actions.delete) permissions.push(`${name}_DELETE`);
-            }
-        });
-    }
-    return permissions;
 };
 
 // @desc    Auth user & get token
@@ -38,27 +24,10 @@ const loginUser = async (req, res) => {
         });
 
         if (user && (await user.matchPassword(password))) {
-            const permissions = flattenPermissions(user.role);
-            
-            const roleData = user.role ? {
-                ...user.role._doc,
-                permissions
-            } : null;
+            const permissions = user.getFlattenedPermissions();
 
-            // Update last login
-            user.lastLogin = Date.now();
-            await user.save();
-
-            await ActivityService.logActivity(
-                user._id, 
-                'LOGIN', 
-                'Auth', 
-                `User logged in: ${user.name}`, 
-                user._id, 
-                user.name
-            );
-
-            return SuccessResponse(res, 'Login successful', {
+            // Format the response consistent with industry standards
+            const userData = {
                 _id: user._id,
                 name: user.name,
                 email: user.email,
@@ -66,9 +35,24 @@ const loginUser = async (req, res) => {
                 profilePhoto: user.profilePhoto,
                 lastLogin: user.lastLogin,
                 status: user.status,
-                role: roleData,
+                role: user.role ? { ...user.role._doc, permissions } : null,
                 token: generateToken(user._id),
-            });
+            };
+
+            // Update last login
+            user.lastLogin = Date.now();
+            await user.save();
+
+            await ActivityService.logActivity(
+                user._id,
+                'LOGIN',
+                'Auth',
+                `User logged in: ${user.name}`,
+                user._id,
+                user.name
+            );
+
+            return SuccessResponse(res, 'Login successful', userData);
         } else {
             return ErrorResponse(res, 'Invalid email or password', null, 401);
         }
@@ -88,11 +72,8 @@ const getUserProfile = async (req, res) => {
         });
 
         if (user) {
-            const permissions = flattenPermissions(user.role);
-            const roleData = user.role ? {
-                ...user.role._doc,
-                permissions
-            } : null;
+            const permissions = user.getFlattenedPermissions();
+            const roleData = user.role ? { ...user.role._doc, permissions } : null;
 
             return SuccessResponse(res, 'Profile retrieved', {
                 _id: user._id,
@@ -169,13 +150,13 @@ const updateProfile = async (req, res) => {
 
         user.name = req.body.name || user.name;
         user.mobileNumber = req.body.mobileNumber || user.mobileNumber;
-        
+
         if (req.file) {
             user.profilePhoto = `/uploads/${req.file.filename}`;
         }
 
         const updatedUser = await user.save();
-        
+
         return SuccessResponse(res, 'Profile updated successfully', {
             _id: updatedUser._id,
             name: updatedUser.name,
@@ -220,11 +201,80 @@ const updateSettings = async (req, res) => {
 
         user.settings = { ...user.settings, ...req.body };
         await user.save();
-        
+
         return SuccessResponse(res, 'Settings updated successfully', user.settings);
     } catch (error) {
         return ErrorResponse(res, 'Settings update failed', error.message);
     }
 };
 
-module.exports = { loginUser, getUserProfile, forgotPassword, resetPassword, updateProfile, changePassword, updateSettings };
+
+
+const registerCompanyController = async (req, res) => {
+    try {
+        const { companyName, address, phone, website, description, ownerName, ownerEmail, ownerPassword, ownerMobile } = req.body;
+
+        // Check if company exists
+        const existingCompany = await Company.findOne({ name: companyName });
+        if (existingCompany) return ErrorResponse(res, 'Company already exists', null, 400);
+
+        // Check if owner exists
+        const existingUser = await User.findOne({ email: ownerEmail });
+        if (existingUser) return ErrorResponse(res, 'Owner email already registered', null, 400);
+
+        // Find Owner Role
+        const ownerRole = await Role.findOne({ roleName: 'Owner' });
+        if (!ownerRole) return ErrorResponse(res, 'Owner role not found', null, 500);
+
+        // Create Owner User
+        const user = await User.create({
+            name: ownerName,
+            email: ownerEmail,
+            password: ownerPassword,
+            mobileNumber: ownerMobile,
+            role: ownerRole._id
+        });
+
+        // Create Company
+        const company = await Company.create({
+            name: companyName,
+            address,
+            phone,
+            website,
+            description,
+            owner: user._id,
+            createdBy: user._id
+        });
+
+        // Link user to company
+        user.company = company._id;
+        await user.save();
+
+        // Create public CompanyInfo
+        await CompanyInfo.create({
+            name: companyName,
+            address,
+            phone,
+            website,
+            description,
+            companyId: company._id
+        });
+
+        // Log activity
+        await ActivityService.logActivity(
+            user._id,
+            'COMPANY_REGISTER',
+            'Auth',
+            `Company registered: ${companyName}`,
+            user._id,
+            user.name
+        );
+
+        return SuccessResponse(res, 'Company registered successfully', { company, owner: user });
+
+    } catch (error) {
+        return ErrorResponse(res, 'Company registration failed', error.message);
+    }
+};
+
+module.exports = { loginUser, getUserProfile, forgotPassword, resetPassword, updateProfile, changePassword, updateSettings ,registerCompanyController};

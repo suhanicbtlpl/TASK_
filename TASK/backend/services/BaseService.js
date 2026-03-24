@@ -4,12 +4,12 @@ class BaseService {
     }
 
     async getAll(params = {}) {
-        const { 
-            page = 1, 
-            limit = 10, 
-            search = "", 
-            searchFields = [], 
-            filter = {}, 
+        const {
+            page = 1,
+            limit = 10,
+            search = "",
+            searchFields = [],
+            filter = {},
             populate = [],
             sort = { createdAt: -1 }
         } = params;
@@ -23,7 +23,7 @@ class BaseService {
         }
 
         const skip = (page - 1) * limit;
-        
+
         let mongooseQuery = this.model.find(query)
             .sort(sort)
             .skip(skip)

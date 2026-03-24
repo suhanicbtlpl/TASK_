@@ -28,9 +28,14 @@ api.interceptors.response.use(
     }
 );
 
-// Helper: extract paginated payload from standard { success, data: { data, total, pages, page } }
-const paginated = (res) => {
-    const payload = res.data?.data; // unwrap success envelope
+// --- Response Normalization Helpers ---
+// These helpers extract the actual data from the API response envelope { success: true, message: "...", data: { ... } }
+
+/**
+ * Normalizes paginated responses into a consistent format for the UI.
+ */
+const formatPaginatedResponse = (response) => {
+    const payload = response.data?.data; // Unwrap the 'data' from the common response envelope
     return {
         data: Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [],
         total: payload?.total || 0,
@@ -39,127 +44,131 @@ const paginated = (res) => {
     };
 };
 
-// Helper: extract simple list from standard { success, data: [] }
-const list = (res) => {
-    const payload = res.data?.data;
-    if (Array.isArray(payload?.data)) return payload.data; // nested paginated
+/**
+ * Extracts a simple list/array from the response data.
+ */
+const formatListResponse = (response) => {
+    const payload = response.data?.data;
+    if (Array.isArray(payload?.data)) return payload.data; // Handle cases where data is nested
     if (Array.isArray(payload)) return payload;
     return [];
 };
 
-// Helper: extract single object
-const single = (res) => res.data?.data || res.data || null;
+/**
+ * Extracts a single object from the response data.
+ */
+const formatSingleResponse = (response) => response.data?.data || response.data || null;
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 export const authService = {
-    login: (credentials) => api.post('/auth/login', credentials).then(single),
-    getProfile: () => api.get('/auth/profile').then(single),
+    login: (credentials) => api.post('/auth/login', credentials).then(formatSingleResponse),
+    getProfile: () => api.get('/auth/profile').then(formatSingleResponse),
     updateProfile: (formData) => api.put('/auth/profile', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
-    }).then(single),
-    changePassword: (passwords) => api.put('/auth/change-password', passwords).then(single),
-    updateSettings: (settings) => api.put('/auth/settings', settings).then(single),
-    forgotPassword: (email) => api.post('/auth/forgot-password', { email }).then(single),
-    resetPassword: (token, password) => api.post(`/auth/reset-password/${token}`, { password }).then(single),
+    }).then(formatSingleResponse),
+    changePassword: (passwords) => api.put('/auth/change-password', passwords).then(formatSingleResponse),
+    updateSettings: (settings) => api.put('/auth/settings', settings).then(formatSingleResponse),
+    forgotPassword: (email) => api.post('/auth/forgot-password', { email }).then(formatSingleResponse),
+    resetPassword: (token, password) => api.post(`/auth/reset-password/${token}`, { password }).then(formatSingleResponse),
 };
 
 // ── STAFF ─────────────────────────────────────────────────────────────────────
 export const staffService = {
-    getStaff: (params) => api.get('/staff', { params }).then(paginated),
-    getDeletedStaff: (params) => api.get('/staff/deleted', { params }).then(paginated),
-    createStaff: (data) => api.post('/staff', data).then(single),
-    updateStaff: (id, data) => api.put(`/staff/${id}`, data).then(single),
-    deleteStaff: (id) => api.delete(`/staff/${id}`).then(single),
-    restoreStaff: (id) => api.put(`/staff/${id}/restore`).then(single),
-    permanentDeleteStaff: (id) => api.delete(`/staff/${id}/permanent`).then(single),
+    getStaff: (params) => api.get('/staff', { params }).then(formatPaginatedResponse),
+    getDeletedStaff: (params) => api.get('/staff/deleted', { params }).then(formatPaginatedResponse),
+    createStaff: (data) => api.post('/staff', data).then(formatSingleResponse),
+    updateStaff: (id, data) => api.put(`/staff/${id}`, data).then(formatSingleResponse),
+    deleteStaff: (id) => api.delete(`/staff/${id}`).then(formatSingleResponse),
+    restoreStaff: (id) => api.put(`/staff/${id}/restore`).then(formatSingleResponse),
+    permanentDeleteStaff: (id) => api.delete(`/staff/${id}/permanent`).then(formatSingleResponse),
 };
 
     // ── ROLES ─────────────────────────────────────────────────────────────────────
     export const roleService = {
-        getRoles: (params) => api.get('/roles', { params }).then(paginated),
-        getDeletedRoles: (params) => api.get('/roles/deleted', { params }).then(paginated),
-        createRole: (data) => api.post('/roles', data).then(single),
-        updateRole: (id, data) => api.put(`/roles/${id}`, data).then(single),
-        deleteRole: (id) => api.delete(`/roles/${id}`).then(single),
-        restoreRole: (id) => api.put(`/roles/${id}/restore`).then(single),
-        permanentDeleteRole: (id) => api.delete(`/roles/${id}/permanent`).then(single),
+        getRoles: (params) => api.get('/roles', { params }).then(formatPaginatedResponse),
+        getDeletedRoles: (params) => api.get('/roles/deleted', { params }).then(formatPaginatedResponse),
+        createRole: (data) => api.post('/roles', data).then(formatSingleResponse),
+        updateRole: (id, data) => api.put(`/roles/${id}`, data).then(formatSingleResponse),
+        deleteRole: (id) => api.delete(`/roles/${id}`).then(formatSingleResponse),
+        restoreRole: (id) => api.put(`/roles/${id}/restore`).then(formatSingleResponse),
+        permanentDeleteRole: (id) => api.delete(`/roles/${id}/permanent`).then(formatSingleResponse),
     };
 
 // ── PROJECTS ──────────────────────────────────────────────────────────────────
 export const projectService = {
-    getProjects: (params) => api.get('/projects', { params }).then(paginated),
-    getDeletedProjects: (params) => api.get('/projects/deleted', { params }).then(paginated),
-    createProject: (data) => api.post('/projects', data).then(single),
-    updateProject: (id, data) => api.put(`/projects/${id}`, data).then(single),
-    deleteProject: (id) => api.delete(`/projects/${id}`).then(single),
-    restoreProject: (id) => api.put(`/projects/${id}/restore`).then(single),
-    permanentDeleteProject: (id) => api.delete(`/projects/${id}/permanent`).then(single),
+    getProjects: (params) => api.get('/projects', { params }).then(formatPaginatedResponse),
+    getDeletedProjects: (params) => api.get('/projects/deleted', { params }).then(formatPaginatedResponse),
+    createProject: (data) => api.post('/projects', data).then(formatSingleResponse),
+    updateProject: (id, data) => api.put(`/projects/${id}`, data).then(formatSingleResponse),
+    deleteProject: (id) => api.delete(`/projects/${id}`).then(formatSingleResponse),
+    restoreProject: (id) => api.put(`/projects/${id}/restore`).then(formatSingleResponse),
+    permanentDeleteProject: (id) => api.delete(`/projects/${id}/permanent`).then(formatSingleResponse),
 };
 
 // ── TASKS ─────────────────────────────────────────────────────────────────────
 export const taskService = {
-    getTasks: (params) => api.get('/tasks', { params }).then(paginated),
-    getTasksByProject: (projectId, params) => api.get(`/tasks/project/${projectId}`, { params }).then(paginated),
-    getDeletedTasks: (params) => api.get('/tasks/deleted', { params }).then(paginated),
-    createTask: (data) => api.post('/tasks', data).then(single),
-    updateTask: (id, data) => api.put(`/tasks/${id}`, data).then(single),
-    deleteTask: (id) => api.delete(`/tasks/${id}`).then(single),
-    restoreTask: (id) => api.put(`/tasks/${id}/restore`).then(single),
-    permanentDeleteTask: (id) => api.delete(`/tasks/${id}/permanent`).then(single),
+    getTasks: (params) => api.get('/tasks', { params }).then(formatPaginatedResponse),
+    getTasksByProject: (projectId, params) => api.get(`/tasks/project/${projectId}`, { params }).then(formatPaginatedResponse),
+    getDeletedTasks: (params) => api.get('/tasks/deleted', { params }).then(formatPaginatedResponse),
+    createTask: (data) => api.post('/tasks', data).then(formatSingleResponse),
+    updateTask: (id, data) => api.put(`/tasks/${id}`, data).then(formatSingleResponse),
+    deleteTask: (id) => api.delete(`/tasks/${id}`).then(formatSingleResponse),
+    restoreTask: (id) => api.put(`/tasks/${id}/restore`).then(formatSingleResponse),
+    permanentDeleteTask: (id) => api.delete(`/tasks/${id}/permanent`).then(formatSingleResponse),
 };
 
 // ── PERMISSIONS ───────────────────────────────────────────────────────────────
 export const permissionService = {
-    getPermissions: (params) => api.get('/permissions', { params }).then(paginated),
-    getDeletedPermissions: (params) => api.get('/permissions/deleted', { params }).then(paginated),
-    createPermission: (data) => api.post('/permissions', data).then(single),
-    updatePermission: (id, data) => api.put(`/permissions/${id}`, data).then(single),
-    deletePermission: (id) => api.delete(`/permissions/${id}`).then(single),
-    restorePermission: (id) => api.put(`/permissions/${id}/restore`).then(single),
-    permanentDeletePermission: (id) => api.delete(`/permissions/${id}/permanent`).then(single),
+    getPermissions: (params) => api.get('/permissions', { params }).then(formatPaginatedResponse),
+    getDeletedPermissions: (params) => api.get('/permissions/deleted', { params }).then(formatPaginatedResponse),
+    createPermission: (data) => api.post('/permissions', data).then(formatSingleResponse),
+    updatePermission: (id, data) => api.put(`/permissions/${id}`, data).then(formatSingleResponse),
+    deletePermission: (id) => api.delete(`/permissions/${id}`).then(formatSingleResponse),
+    restorePermission: (id) => api.put(`/permissions/${id}/restore`).then(formatSingleResponse),
+    permanentDeletePermission: (id) => api.delete(`/permissions/${id}/permanent`).then(formatSingleResponse),
 };
 
 // ── DOCUMENTS ─────────────────────────────────────────────────────────────────
 export const documentService = {
-    getDocuments: (params) => api.get('/documents', { params }).then(paginated),
-    getDeletedDocuments: (params) => api.get('/documents/deleted', { params }).then(paginated),
+    getDocuments: (params) => api.get('/documents', { params }).then(formatPaginatedResponse),
+    getDeletedDocuments: (params) => api.get('/documents/deleted', { params }).then(formatPaginatedResponse),
     uploadDocument: (formData) => api.post('/documents', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
-    }).then(single),
+    }).then(formatSingleResponse),
     addVersion: (id, formData) => api.post(`/documents/${id}/version`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
-    }).then(single),
-    updateDocument: (id, data) => api.put(`/documents/${id}`, data).then(single),
-    deleteDocument: (id) => api.delete(`/documents/${id}`).then(single),
-    restoreDocument: (id) => api.put(`/documents/${id}/restore`).then(single),
-    permanentDeleteDocument: (id) => api.delete(`/documents/${id}/permanent`).then(single),
+    }).then(formatSingleResponse),
+    updateDocument: (id, data) => api.put(`/documents/${id}`, data).then(formatSingleResponse),
+    deleteDocument: (id) => api.delete(`/documents/${id}`).then(formatSingleResponse),
+    restoreDocument: (id) => api.put(`/documents/${id}/restore`).then(formatSingleResponse),
+    permanentDeleteDocument: (id) => api.delete(`/documents/${id}/permanent`).then(formatSingleResponse),
 };
 
 // ── ACTIVITY ──────────────────────────────────────────────────────────────────
 export const activityService = {
     getRecentActivities: (limit) => api.get('/activities/recent', { params: { limit } }).then(
-        (res) => Array.isArray(res.data?.data) ? res.data.data : []
+        (response) => Array.isArray(response.data?.data) ? response.data.data : []
     ),
 };
 
 // ── ISSUES ────────────────────────────────────────────────────────────────────
 export const issueService = {
-    getIssues: (params) => api.get('/issues', { params }).then(paginated),
-    getDeletedIssues: (params) => api.get('/issues/deleted', { params }).then(paginated),
-    createIssue: (data) => api.post('/issues', data).then(single),
-    updateIssue: (id, data) => api.put(`/issues/${id}`, data).then(single),
-    deleteIssue: (id) => api.delete(`/issues/${id}`).then(single),
-    restoreIssue: (id) => api.put(`/issues/${id}/restore`).then(single),
-    permanentDeleteIssue: (id) => api.delete(`/issues/${id}/permanent`).then(single),
+    getIssues: (params) => api.get('/issues', { params }).then(formatPaginatedResponse),
+    getDeletedIssues: (params) => api.get('/issues/deleted', { params }).then(formatPaginatedResponse),
+    createIssue: (data) => api.post('/issues', data).then(formatSingleResponse),
+    updateIssue: (id, data) => api.put(`/issues/${id}`, data).then(formatSingleResponse),
+    deleteIssue: (id) => api.delete(`/issues/${id}`).then(formatSingleResponse),
+    restoreIssue: (id) => api.put(`/issues/${id}/restore`).then(formatSingleResponse),
+    permanentDeleteIssue: (id) => api.delete(`/issues/${id}/permanent`).then(formatSingleResponse),
 };
 
 // ── NOTIFICATIONS ─────────────────────────────────────────────────────────────
 export const notificationService = {
     getNotifications: () => api.get('/notifications').then(
-        (res) => Array.isArray(res.data?.data) ? res.data.data : []
+        (response) => Array.isArray(response.data?.data) ? response.data.data : []
     ),
-    markRead: (id) => api.put(`/notifications/${id}/read`).then(single),
-    markAllRead: () => api.put('/notifications/read-all').then(single),
+    markRead: (id) => api.put(`/notifications/${id}/read`).then(formatSingleResponse),
+    markAllRead: () => api.put('/notifications/read-all').then(formatSingleResponse),
 };
 
 export default api;

@@ -3,9 +3,11 @@ const ActivityService = require('../services/ActivityService');
 const EmailService = require('../services/EmailService');
 const { SuccessResponse, ErrorResponse } = require('../utils/Response');
 
-// @desc    Get all staff with search and pagination
-// @route   GET /api/v1/staff
-// @access  Private
+/**
+ * Retrieves all staff members with search and pagination.
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ */
 const getStaff = async (req, res) => {
     try {
         const { page, limit, search } = req.query;
@@ -16,15 +18,16 @@ const getStaff = async (req, res) => {
     }
 };
 
-// @desc    Create new staff member
-// @route   POST /api/v1/staff
-// @access  Private/Admin
+/**
+ * Creates a new staff member and sends a welcome email.
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ */
 const createStaff = async (req, res) => {
     try {
-        // const { email } = req.body;
         const { name, email, password, mobileNumber, role } = req.body;
         
-        // Check for ANY existing user with this email (including soft-deleted)
+        // Check for existing user (including soft-deleted)
         const existing = await StaffService.model.findOne({ email });
         if (existing) {
             if (existing.isDeleted) {
@@ -33,19 +36,10 @@ const createStaff = async (req, res) => {
             return ErrorResponse(res, 'User with this email already exists', null, 400);
         }
 
-
-        const user = await StaffService.create({
-            name,
-            email,
-            password,
-            mobileNumber,
-            role
-        });
-
-        // Populate role to get roleName for email
+        const user = await StaffService.create({ name, email, password, mobileNumber, role });
         const populatedUser = await StaffService.model.findById(user._id).populate('role');
 
-        // Send welcome email (async, don't block response)
+        // Async welcome email
         EmailService.sendWelcomeEmail({
             name: user.name,
             email: user.email,
@@ -68,9 +62,11 @@ const createStaff = async (req, res) => {
     }
 };
 
-// @desc    Update staff member
-// @route   PUT /api/v1/staff/:id
-// @access  Private/Admin
+/**
+ * Updates an existing staff member's details.
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ */
 const updateStaff = async (req, res) => {
     try {
         const user = await StaffService.update(req.params.id, req.body);
@@ -93,9 +89,11 @@ const updateStaff = async (req, res) => {
     }
 };
 
-// @desc    Soft delete staff member
-// @route   DELETE /api/v1/staff/:id
-// @access  Private/Admin
+/**
+ * Soft deletes a staff member.
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ */
 const deleteStaff = async (req, res) => {
     try {
         const user = await StaffService.softDelete(req.params.id);
@@ -118,9 +116,11 @@ const deleteStaff = async (req, res) => {
     }
 };
 
-// @desc    Get deleted staff
-// @route   GET /api/v1/staff/deleted
-// @access  Private/Admin
+/**
+ * Retrieves soft-deleted staff members from the Recycle Bin.
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ */
 const getDeletedStaff = async (req, res) => {
     try {
         const { page, limit } = req.query;
@@ -131,9 +131,11 @@ const getDeletedStaff = async (req, res) => {
     }
 };
 
-// @desc    Restore staff
-// @route   PUT /api/v1/staff/:id/restore
-// @access  Private/Admin
+/**
+ * Restores a soft-deleted staff member.
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ */
 const restoreStaff = async (req, res) => {
     try {
         const user = await StaffService.restore(req.params.id);
@@ -154,9 +156,11 @@ const restoreStaff = async (req, res) => {
     }
 };
 
-// @desc    Permanent delete staff
-// @route   DELETE /api/v1/staff/:id/permanent
-// @access  Private/Admin
+/**
+ * Permanently deletes a staff member record.
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ */
 const permanentDeleteStaff = async (req, res) => {
     try {
         const user = await StaffService.permanentDelete(req.params.id);
@@ -177,6 +181,14 @@ const permanentDeleteStaff = async (req, res) => {
     }
 };
 
-module.exports = { getStaff, createStaff, updateStaff, deleteStaff, getDeletedStaff, restoreStaff, permanentDeleteStaff };
+module.exports = { 
+    getStaff, 
+    createStaff, 
+    updateStaff, 
+    deleteStaff, 
+    getDeletedStaff, 
+    restoreStaff, 
+    permanentDeleteStaff 
+};
 
 

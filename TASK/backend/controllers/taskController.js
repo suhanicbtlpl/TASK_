@@ -3,25 +3,27 @@ const ActivityService = require('../services/ActivityService');
 const NotificationService = require('../services/NotificationService');
 const { SuccessResponse, ErrorResponse } = require('../utils/Response');
 
-// @desc    Get all tasks with search and pagination
-// @route   GET /api/v1/tasks
-// @access  Private
+/**
+ * Get all tasks with search and pagination.
+ */
 const getTasks = async (req, res) => {
     try {
-        const { page, limit, search } = req.query;
-        const result = await TaskService.getAll({ page, limit, search });
+        const { page, limit, search, projectId } = req.query;
+        const filter = {};
+        if (projectId) filter.projectId = projectId;
+
+        const result = await TaskService.getAll({ page, limit, search, ...filter });
         return SuccessResponse(res, 'Tasks retrieved successfully', result);
     } catch (error) {
         return ErrorResponse(res, 'Error fetching tasks', error.message);
     }
 };
 
-// @desc    Get tasks by project
-// @route   GET /api/v1/tasks/project/:projectId
-// @access  Private
+/**
+ * Get all active tasks for a specific project.
+ */
 const getTasksByProject = async (req, res) => {
     try {
-        // Special case: direct service model access for specific query or add method to TaskService
         const tasks = await TaskService.model.find({ 
             projectId: req.params.projectId, 
             isDeleted: false 
@@ -32,9 +34,9 @@ const getTasksByProject = async (req, res) => {
     }
 };
 
-// @desc    Create new task
-// @route   POST /api/v1/tasks
-// @access  Private
+/**
+ * Create a new task and notify the assigned staff.
+ */
 const createTask = async (req, res) => {
     try {
         const task = await TaskService.createTask({
@@ -52,16 +54,15 @@ const createTask = async (req, res) => {
         );
 
         // Notify assigned staff
-        if (task.assignedStaff && task.assignedStaff.length > 0) {
-            const notifications = task.assignedStaff.map(staffId => ({
-                recipient: staffId,
+        if (task.assignedTo) {
+            await NotificationService.createNotification({
+                recipient: task.assignedTo,
                 sender: req.user._id,
                 type: 'TASK_ASSIGNED',
                 title: 'New Task Assigned',
                 message: `You have been assigned a new task: ${task.taskTitle}`,
                 link: `/tasks`
-            }));
-            await Promise.all(notifications.map(n => NotificationService.createNotification(n)));
+            });
         }
 
         return SuccessResponse(res, 'Task created successfully', task, 201);
@@ -70,9 +71,9 @@ const createTask = async (req, res) => {
     }
 };
 
-// @desc    Update task status or details
-// @route   PUT /api/v1/tasks/:id
-// @access  Private
+/**
+ * Update task details or status.
+ */
 const updateTask = async (req, res) => {
     try {
         const task = await TaskService.update(req.params.id, req.body);
@@ -93,9 +94,9 @@ const updateTask = async (req, res) => {
     }
 };
 
-// @desc    Soft delete task
-// @route   DELETE /api/v1/tasks/:id
-// @access  Private
+/**
+ * Soft delete a task.
+ */
 const deleteTask = async (req, res) => {
     try {
         const task = await TaskService.softDelete(req.params.id);
@@ -116,9 +117,9 @@ const deleteTask = async (req, res) => {
     }
 };
 
-// @desc    Get deleted tasks
-// @route   GET /api/v1/tasks/deleted
-// @access  Private/Admin
+/**
+ * Get tasks from Recycle Bin.
+ */
 const getDeletedTasks = async (req, res) => {
     try {
         const { page, limit } = req.query;
@@ -129,9 +130,9 @@ const getDeletedTasks = async (req, res) => {
     }
 };
 
-// @desc    Restore task
-// @route   PUT /api/v1/tasks/:id/restore
-// @access  Private/Admin
+/**
+ * Restore a task from Recycle Bin.
+ */
 const restoreTask = async (req, res) => {
     try {
         const task = await TaskService.restore(req.params.id);
@@ -152,9 +153,9 @@ const restoreTask = async (req, res) => {
     }
 };
 
-// @desc    Permanent delete task
-// @route   DELETE /api/v1/tasks/:id/permanent
-// @access  Private/Admin
+/**
+ * Permanently delete a task.
+ */
 const permanentDeleteTask = async (req, res) => {
     try {
         const task = await TaskService.permanentDelete(req.params.id);
@@ -175,6 +176,15 @@ const permanentDeleteTask = async (req, res) => {
     }
 };
 
-module.exports = { getTasks, getTasksByProject, createTask, updateTask, deleteTask, getDeletedTasks, restoreTask, permanentDeleteTask };
+module.exports = { 
+    getTasks, 
+    getTasksByProject, 
+    createTask, 
+    updateTask, 
+    deleteTask, 
+    getDeletedTasks, 
+    restoreTask, 
+    permanentDeleteTask 
+};
 
 

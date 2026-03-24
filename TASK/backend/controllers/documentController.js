@@ -1,34 +1,12 @@
 const DocumentService = require('../services/DocumentService');
 const ActivityService = require('../services/ActivityService');
 const { SuccessResponse, ErrorResponse } = require('../utils/Response');
-const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Ensure uploads directory exists
-const uploadDir = 'uploads/';
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Multer Storage Setup
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`); // Clean filename
-    }
-});
-
-const upload = multer({
-    storage,
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
-}).single('file');
-
-// @desc    Get all documents with search and pagination
-// @route   GET /api/v1/documents
-// @access  Private
+/**
+ * Get all documents with search and pagination.
+ */
 const getDocuments = async (req, res) => {
     try {
         const { page, limit, search } = req.query;
@@ -39,101 +17,88 @@ const getDocuments = async (req, res) => {
     }
 };
 
-// @desc    Upload new document
-// @route   POST /api/v1/documents
-// @access  Private
-const uploadDocument = (req, res) => {
-    upload(req, res, async (err) => {
-        if (err) {
-            return ErrorResponse(res, err.message, null, 400);
-        }
-
+const uploadDocument = async (req, res) => {
+    try {
         if (!req.file) {
             return ErrorResponse(res, 'Please upload a file', null, 400);
         }
 
         const { title, description, projectId, category, tags } = req.body;
 
-        try {
-            const documentData = {
-                title,
-                description,
-                projectId: projectId || null,
-                category: category || 'General',
-                tags: tags ? tags.split(',').map(t => t.trim()) : [],
+        const documentData = {
+            title,
+            description,
+            projectId: projectId || null,
+            category: category || 'General',
+            tags: tags ? tags.split(',').map(t => t.trim()) : [],
+            fileUrl: `/uploads/${req.file.filename}`,
+            fileName: req.file.originalname,
+            fileSize: req.file.size,
+            uploadedBy: req.user._id,
+            versions: [{
                 fileUrl: `/uploads/${req.file.filename}`,
                 fileName: req.file.originalname,
                 fileSize: req.file.size,
                 uploadedBy: req.user._id,
-                versions: [{
-                    fileUrl: `/uploads/${req.file.filename}`,
-                    fileName: req.file.originalname,
-                    fileSize: req.file.size,
-                    uploadedBy: req.user._id
-                }]
-            };
+                createdAt: new Date()
+            }]
+        };
 
-            const document = await DocumentService.create(documentData);
+        const document = await DocumentService.create(documentData);
 
-            await ActivityService.logActivity(
-                req.user._id, 
-                'UPLOAD', 
-                'Document', 
-                `Uploaded document: ${document.title}`, 
-                document._id, 
-                document.title
-            );
+        await ActivityService.logActivity(
+            req.user._id, 
+            'UPLOAD', 
+            'Document', 
+            `Uploaded document: ${document.title}`, 
+            document._id, 
+            document.title
+        );
 
-            return SuccessResponse(res, 'Document uploaded successfully', document, 201);
+        return SuccessResponse(res, 'Document uploaded successfully', document, 201);
 
-        } catch (error) {
-            return ErrorResponse(res, 'Error saving document', error.message, 400);
-        }
-    });
+    } catch (error) {
+        return ErrorResponse(res, 'Error saving document', error.message, 400);
+    }
 };
 
-// @desc    Add new version to existing document
-// @route   POST /api/v1/documents/:id/version
-// @access  Private
-const addDocumentVersion = (req, res) => {
-    upload(req, res, async (err) => {
-        if (err) return ErrorResponse(res, err.message, null, 400);
+const addDocumentVersion = async (req, res) => {
+    try {
         if (!req.file) return ErrorResponse(res, 'Please upload a file', null, 400);
 
-        try {
-            const document = await DocumentService.getById(req.params.id);
-            if (!document) return ErrorResponse(res, 'Document not found', null, 404);
+        const document = await DocumentService.getById(req.params.id);
+        if (!document) return ErrorResponse(res, 'Document not found', null, 404);
 
-            const newVersion = {
-                fileUrl: `/uploads/${req.file.filename}`,
-                fileName: req.file.originalname,
-                fileSize: req.file.size,
-                uploadedBy: req.user._id
-            };
+        const newVersion = {
+            fileUrl: `/uploads/${req.file.filename}`,
+            fileName: req.file.originalname,
+            fileSize: req.file.size,
+            uploadedBy: req.user._id,
+            createdAt: new Date()
+        };
 
-            // Update main document fields to the latest version
-            document.fileUrl = newVersion.fileUrl;
-            document.fileName = newVersion.fileName;
-            document.fileSize = newVersion.fileSize;
-            document.versions.push(newVersion);
+        // Update main document fields to the latest version
+        document.fileUrl = newVersion.fileUrl;
+        document.fileName = newVersion.fileName;
+        document.fileSize = newVersion.fileSize;
+        document.versions.push(newVersion);
 
-            await document.save();
+        await document.save();
 
-            await ActivityService.logActivity(
-                req.user._id, 
-                'VERSION_UPLOAD', 
-                'Document', 
-                `Uploaded new version for document: ${document.title}`, 
-                document._id, 
-                document.title
-            );
+        await ActivityService.logActivity(
+            req.user._id, 
+            'VERSION_UPLOAD', 
+            'Document', 
+            `Uploaded new version for document: ${document.title}`, 
+            document._id, 
+            document.title
+        );
 
-            return SuccessResponse(res, 'New version uploaded successfully', document);
+        return SuccessResponse(res, 'New version uploaded successfully', document);
 
-        } catch (error) {
-            return ErrorResponse(res, 'Error adding version', error.message, 400);
-        }
-    });
+    } catch (error) {
+        return ErrorResponse(res, 'Error adding version', error.message, 400);
+    }
 };
 
 // @desc    Update document metadata

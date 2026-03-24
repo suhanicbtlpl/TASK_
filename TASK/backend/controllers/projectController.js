@@ -3,9 +3,9 @@ const ActivityService = require('../services/ActivityService');
 const NotificationService = require('../services/NotificationService');
 const { SuccessResponse, ErrorResponse } = require('../utils/Response');
 
-// @desc    Get all projects with search and pagination
-// @route   GET /api/v1/projects
-// @access  Private
+/**
+ * Get all projects with search and pagination.
+ */
 const getProjects = async (req, res) => {
     try {
         const { page, limit, search } = req.query;
@@ -16,18 +16,18 @@ const getProjects = async (req, res) => {
     }
 };
 
-// @desc    Create new project
-// @route   POST /api/v1/projects
-// @access  Private
+/**
+ * Create a new project and notify assigned staff.
+ */
 const createProject = async (req, res) => {
     try {
-        const { projectName, assignedStaff } = req.body;
-        const project = await ProjectService.create({
-            projectName,
-            assignedStaff,
-            totalAssignedStaff: assignedStaff?.length || 0,
+        const projectData = {
+            ...req.body,
+            totalAssignedStaff: req.body.assignedStaff?.length || 0,
             createdBy: req.user._id
-        });
+        };
+
+        const project = await ProjectService.create(projectData);
 
         await ActivityService.logActivity(
             req.user._id, 
@@ -39,7 +39,7 @@ const createProject = async (req, res) => {
         );
 
         // Notify assigned staff
-        if (project.assignedStaff && project.assignedStaff.length > 0) {
+        if (project.assignedStaff?.length > 0) {
             const notifications = project.assignedStaff.map(staffId => ({
                 recipient: staffId,
                 sender: req.user._id,
@@ -57,14 +57,15 @@ const createProject = async (req, res) => {
     }
 };
 
-// @desc    Update project
-// @route   PUT /api/v1/projects/:id
-// @access  Private
+/**
+ * Update project details and update staff count.
+ */
 const updateProject = async (req, res) => {
     try {
-        const { projectName, assignedStaff } = req.body;
-        const updateData = { projectName, assignedStaff };
-        if (assignedStaff) updateData.totalAssignedStaff = assignedStaff.length;
+        const updateData = { ...req.body };
+        if (req.body.assignedStaff) {
+            updateData.totalAssignedStaff = req.body.assignedStaff.length;
+        }
 
         const project = await ProjectService.update(req.params.id, updateData);
         if (!project) return ErrorResponse(res, 'Project not found', null, 404);
@@ -84,9 +85,9 @@ const updateProject = async (req, res) => {
     }
 };
 
-// @desc    Soft delete project
-// @route   DELETE /api/v1/projects/:id
-// @access  Private
+/**
+ * Soft delete a project.
+ */
 const deleteProject = async (req, res) => {
     try {
         const project = await ProjectService.softDelete(req.params.id);
@@ -107,9 +108,9 @@ const deleteProject = async (req, res) => {
     }
 };
 
-// @desc    Get deleted projects
-// @route   GET /api/v1/projects/deleted
-// @access  Private/Admin
+/**
+ * Get deleted projects from Recycle Bin.
+ */
 const getDeletedProjects = async (req, res) => {
     try {
         const { page, limit } = req.query;
@@ -120,9 +121,9 @@ const getDeletedProjects = async (req, res) => {
     }
 };
 
-// @desc    Restore project
-// @route   PUT /api/v1/projects/:id/restore
-// @access  Private/Admin
+/**
+ * Restore a project from Recycle Bin.
+ */
 const restoreProject = async (req, res) => {
     try {
         const project = await ProjectService.restore(req.params.id);
@@ -143,9 +144,9 @@ const restoreProject = async (req, res) => {
     }
 };
 
-// @desc    Permanent delete project
-// @route   DELETE /api/v1/projects/:id/permanent
-// @access  Private/Admin
+/**
+ * Permanently delete a project.
+ */
 const permanentDeleteProject = async (req, res) => {
     try {
         const project = await ProjectService.permanentDelete(req.params.id);
@@ -166,6 +167,14 @@ const permanentDeleteProject = async (req, res) => {
     }
 };
 
-module.exports = { getProjects, createProject, updateProject, deleteProject, getDeletedProjects, restoreProject, permanentDeleteProject };
+module.exports = { 
+    getProjects, 
+    createProject, 
+    updateProject, 
+    deleteProject, 
+    getDeletedProjects, 
+    restoreProject, 
+    permanentDeleteProject 
+};
 
 

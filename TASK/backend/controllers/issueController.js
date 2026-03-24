@@ -3,9 +3,9 @@ const ActivityService = require('../services/ActivityService');
 const NotificationService = require('../services/NotificationService');
 const { SuccessResponse, ErrorResponse } = require('../utils/Response');
 
-// @desc    Get all issues
-// @route   GET /api/v1/issues
-// @access  Private
+/**
+ * Get all issues with search and pagination.
+ */
 const getIssues = async (req, res) => {
     try {
         const result = await IssueService.getAll(req.query);
@@ -15,13 +15,16 @@ const getIssues = async (req, res) => {
     }
 };
 
-// @desc    Create new issue
-// @route   POST /api/v1/issues
-// @access  Private
+/**
+ * Report a new issue and notify assigned staff.
+ */
 const createIssue = async (req, res) => {
     try {
-        req.body.reportedBy = req.user._id;
-        const issue = await IssueService.create(req.body);
+        const issueData = {
+            ...req.body,
+            reportedBy: req.user._id
+        };
+        const issue = await IssueService.create(issueData);
 
         await ActivityService.logActivity(
             req.user._id, 
@@ -49,9 +52,9 @@ const createIssue = async (req, res) => {
     }
 };
 
-// @desc    Update issue
-// @route   PUT /api/v1/issues/:id
-// @access  Private
+/**
+ * Update issue details and notify if ownership changes.
+ */
 const updateIssue = async (req, res) => {
     try {
         const oldIssue = await IssueService.getById(req.params.id);
@@ -68,7 +71,10 @@ const updateIssue = async (req, res) => {
         );
 
         // Notify if newly assigned
-        if (issue.assignedTo && (!oldIssue.assignedTo || oldIssue.assignedTo.toString() !== issue.assignedTo.toString())) {
+        const wasNewlyAssigned = issue.assignedTo && 
+            (!oldIssue.assignedTo || oldIssue.assignedTo.toString() !== issue.assignedTo.toString());
+            
+        if (wasNewlyAssigned) {
             await NotificationService.createNotification({
                 recipient: issue.assignedTo,
                 sender: req.user._id,
@@ -85,9 +91,9 @@ const updateIssue = async (req, res) => {
     }
 };
 
-// @desc    Soft delete issue
-// @route   DELETE /api/v1/issues/:id
-// @access  Private
+/**
+ * Soft delete an issue.
+ */
 const deleteIssue = async (req, res) => {
     try {
         const issue = await IssueService.softDelete(req.params.id);
@@ -108,9 +114,9 @@ const deleteIssue = async (req, res) => {
     }
 };
 
-// @desc    Get deleted issues
-// @route   GET /api/v1/issues/deleted
-// @access  Private/Admin
+/**
+ * Get issues from Recycle Bin.
+ */
 const getDeletedIssues = async (req, res) => {
     try {
         const { page, limit } = req.query;
@@ -121,9 +127,9 @@ const getDeletedIssues = async (req, res) => {
     }
 };
 
-// @desc    Restore issue
-// @route   PUT /api/v1/issues/:id/restore
-// @access  Private/Admin
+/**
+ * Restore an issue from Recycle Bin.
+ */
 const restoreIssue = async (req, res) => {
     try {
         const issue = await IssueService.restore(req.params.id);
@@ -144,9 +150,9 @@ const restoreIssue = async (req, res) => {
     }
 };
 
-// @desc    Permanent delete issue
-// @route   DELETE /api/v1/issues/:id/permanent
-// @access  Private/Admin
+/**
+ * Permanently delete an issue.
+ */
 const permanentDeleteIssue = async (req, res) => {
     try {
         const issue = await IssueService.permanentDelete(req.params.id);
@@ -167,4 +173,12 @@ const permanentDeleteIssue = async (req, res) => {
     }
 };
 
-module.exports = { getIssues, createIssue, updateIssue, deleteIssue, getDeletedIssues, restoreIssue, permanentDeleteIssue };
+module.exports = { 
+    getIssues, 
+    createIssue, 
+    updateIssue, 
+    deleteIssue, 
+    getDeletedIssues, 
+    restoreIssue, 
+    permanentDeleteIssue 
+};

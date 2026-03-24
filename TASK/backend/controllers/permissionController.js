@@ -1,9 +1,9 @@
 const PermissionService = require('../services/PermissionService');
 const { SuccessResponse, ErrorResponse } = require('../utils/Response');
 
-// @desc    Get all permissions with search and pagination
-// @route   GET /api/v1/permissions
-// @access  Private/Admin
+/**
+ * Get all permissions with search and pagination.
+ */
 const getPermissions = async (req, res) => {
     try {
         const { page, limit, search } = req.query;
@@ -14,9 +14,9 @@ const getPermissions = async (req, res) => {
     }
 };
 
-// @desc    Create new permission
-// @route   POST /api/v1/permissions
-// @access  Private/Admin
+/**
+ * Create a new permission.
+ */
 const createPermission = async (req, res) => {
     try {
         const { permissionName } = req.body;
@@ -32,9 +32,9 @@ const createPermission = async (req, res) => {
     }
 };
 
-// @desc    Update permission
-// @route   PUT /api/v1/permissions/:id
-// @access  Private/Admin
+/**
+ * Update permission details.
+ */
 const updatePermission = async (req, res) => {
     try {
         const permission = await PermissionService.update(req.params.id, req.body);
@@ -45,9 +45,9 @@ const updatePermission = async (req, res) => {
     }
 };
 
-// @desc    Soft delete permission
-// @route   DELETE /api/v1/permissions/:id
-// @access  Private/Admin
+/**
+ * Soft delete a permission.
+ */
 const deletePermission = async (req, res) => {
     try {
         const permission = await PermissionService.softDelete(req.params.id);
@@ -58,9 +58,9 @@ const deletePermission = async (req, res) => {
     }
 };
 
-// @desc    Get deleted permissions
-// @route   GET /api/v1/permissions/deleted
-// @access  Private/Admin
+/**
+ * Get deleted permissions from Recycle Bin.
+ */
 const getDeletedPermissions = async (req, res) => {
     try {
         const { page, limit } = req.query;
@@ -71,9 +71,9 @@ const getDeletedPermissions = async (req, res) => {
     }
 };
 
-// @desc    Restore permission
-// @route   PUT /api/v1/permissions/:id/restore
-// @access  Private/Admin
+/**
+ * Restore a permission from Recycle Bin.
+ */
 const restorePermission = async (req, res) => {
     try {
         const permission = await PermissionService.restore(req.params.id);
@@ -84,9 +84,9 @@ const restorePermission = async (req, res) => {
     }
 };
 
-// @desc    Permanent delete permission
-// @route   DELETE /api/v1/permissions/:id/permanent
-// @access  Private/Admin
+/**
+ * Permanently delete a permission.
+ */
 const permanentDeletePermission = async (req, res) => {
     try {
         const permission = await PermissionService.permanentDelete(req.params.id);
@@ -97,6 +97,14 @@ const permanentDeletePermission = async (req, res) => {
     }
 };
 
-module.exports = { getPermissions, createPermission, updatePermission, deletePermission, getDeletedPermissions, restorePermission, permanentDeletePermission };
+module.exports = { 
+    getPermissions, 
+    createPermission, 
+    updatePermission, 
+    deletePermission, 
+    getDeletedPermissions, 
+    restorePermission, 
+    permanentDeletePermission 
+};
 
 

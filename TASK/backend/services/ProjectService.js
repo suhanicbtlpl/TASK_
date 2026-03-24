@@ -1,11 +1,17 @@
 const BaseService = require('./BaseService');
 const Project = require('../models/Project');
 
+/**
+ * Service for managing Project data.
+ */
 class ProjectService extends BaseService {
     constructor() {
         super(Project);
     }
 
+    /**
+     * Get all projects with automatic population of managers and staff.
+     */
     async getAll(params) {
         return super.getAll({
             ...params,
@@ -17,7 +23,6 @@ class ProjectService extends BaseService {
             ]
         });
     }
-
 }
 
 module.exports = new ProjectService();

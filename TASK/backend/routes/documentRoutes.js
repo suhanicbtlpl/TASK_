@@ -13,12 +13,13 @@ const {
 const { protect } = require('../middleware/authMiddleware');
 const { checkPermission } = require('../middleware/roleMiddleware');
 const { validate, documentRules } = require('../middleware/validator');
+const upload = require('../middleware/uploadMiddleware');
 
 router.route('/')
     .get(protect, checkPermission('Document_READ'), getDocuments)
-    .post(protect, checkPermission('Document_CREATE'), documentRules, validate, uploadDocument);
+    .post(protect, checkPermission('Document_CREATE'), upload.single('file'), documentRules, validate, uploadDocument);
 
-router.post('/:id/version', protect, checkPermission('Document_UPDATE'), addDocumentVersion);
+router.post('/:id/version', protect, checkPermission('Document_UPDATE'), upload.single('file'), addDocumentVersion);
 
 router.get('/deleted', protect, checkPermission('Document_READ'), getDeletedDocuments);
 

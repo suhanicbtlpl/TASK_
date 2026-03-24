@@ -74,4 +74,23 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
 
+// Method to get user permissions as a simple array (e.g., ['Project_READ', 'Task_CREATE'])
+userSchema.methods.getFlattenedPermissions = function () {
+    const permissions = [];
+    if (this.role && this.role.permissions) {
+        this.role.permissions.forEach(p => {
+            if (p.permission && p.actions) {
+                const name = p.permission.permissionName || p.permission;
+                const permissionName = typeof name === 'object' ? name.permissionName : name;
+                
+                if (p.actions.create) permissions.push(`${permissionName}_CREATE`);
+                if (p.actions.read) permissions.push(`${permissionName}_READ`);
+                if (p.actions.update) permissions.push(`${permissionName}_UPDATE`);
+                if (p.actions.delete) permissions.push(`${permissionName}_DELETE`);
+            }
+        });
+    }
+    return permissions;
+};
+
 module.exports = mongoose.model('User', userSchema);

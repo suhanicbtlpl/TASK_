@@ -19,27 +19,15 @@ const protect = async (req, res, next) => {
                 return res.status(401).json({ message: 'User not found' });
             }
 
+            // Flatten permissions for easy access in checkPermission middleware
             const userObj = user.toObject();
-
-            if (userObj.role && userObj.role.permissions) {
-                const flattenedPermissions = [];
-                userObj.role.permissions.forEach(p => {
-                    if (p.permission && p.actions) {
-                        const name = p.permission.permissionName;
-                        if (p.actions.create) flattenedPermissions.push(`${name}_CREATE`);
-                        if (p.actions.read) flattenedPermissions.push(`${name}_READ`);
-                        if (p.actions.update) flattenedPermissions.push(`${name}_UPDATE`);
-                        if (p.actions.delete) flattenedPermissions.push(`${name}_DELETE`);
-                    }
-                });
-                
-                // Assign flattened strings back to role object for middleware check
-                userObj.role.permissions = flattenedPermissions;
+            if (userObj.role) {
+                userObj.role.permissions = user.getFlattenedPermissions();
             }
 
             req.user = userObj;
             next();
-            return; // Exit function after next()
+            return;
         } catch (error) {
             console.error('Auth Error:', error.message);
             res.status(401).json({ message: 'Not authorized, token failed' });

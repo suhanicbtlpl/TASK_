@@ -1,27 +1,27 @@
 const RoleService = require('../services/RoleService');
 const { SuccessResponse, ErrorResponse } = require('../utils/Response');
 
-// @desc    Create a new role
-// @route   POST /api/v1/roles
-// @access  Private/Admin
+/**
+ * Create a new role.
+ */
 const createRole = async (req, res) => {
     try {
-        const { roleName, permissions, status } = req.body;
+        const { roleName } = req.body;
         const roleExists = await RoleService.model.findOne({ roleName, isDeleted: false });
         if (roleExists) {
             return ErrorResponse(res, 'Role already exists', null, 400);
         }
 
-        const role = await RoleService.create({ roleName, permissions, status });
+        const role = await RoleService.create(req.body);
         return SuccessResponse(res, 'Role created successfully', role, 201);
     } catch (error) {
         return ErrorResponse(res, 'Error creating role', error.message, 400);
     }
 };
 
-// @desc    Get all roles with search and pagination
-// @route   GET /api/v1/roles
-// @access  Private
+/**
+ * Get all roles with search and pagination.
+ */
 const getRoles = async (req, res) => {
     try {
         const { page, limit, search } = req.query;
@@ -32,9 +32,9 @@ const getRoles = async (req, res) => {
     }
 };
 
-// @desc    Update role
-// @route   PUT /api/v1/roles/:id
-// @access  Private/Admin
+/**
+ * Update role details.
+ */
 const updateRole = async (req, res) => {
     try {
         const role = await RoleService.update(req.params.id, req.body);
@@ -47,9 +47,9 @@ const updateRole = async (req, res) => {
     }
 };
 
-// @desc    Soft delete role
-// @route   DELETE /api/v1/roles/:id
-// @access  Private/Admin
+/**
+ * Soft delete a role.
+ */
 const deleteRole = async (req, res) => {
     try {
         const role = await RoleService.softDelete(req.params.id);
@@ -62,9 +62,9 @@ const deleteRole = async (req, res) => {
     }
 };
 
-// @desc    Get deleted roles
-// @route   GET /api/v1/roles/deleted
-// @access  Private/Admin
+/**
+ * Get deleted roles from Recycle Bin.
+ */
 const getDeletedRoles = async (req, res) => {
     try {
         const { page, limit } = req.query;
@@ -75,9 +75,9 @@ const getDeletedRoles = async (req, res) => {
     }
 };
 
-// @desc    Restore role
-// @route   PUT /api/v1/roles/:id/restore
-// @access  Private/Admin
+/**
+ * Restore a role from Recycle Bin.
+ */
 const restoreRole = async (req, res) => {
     try {
         const role = await RoleService.restore(req.params.id);
@@ -88,9 +88,9 @@ const restoreRole = async (req, res) => {
     }
 };
 
-// @desc    Permanent delete role
-// @route   DELETE /api/v1/roles/:id/permanent
-// @access  Private/Admin
+/**
+ * Permanently delete a role.
+ */
 const permanentDeleteRole = async (req, res) => {
     try {
         const role = await RoleService.permanentDelete(req.params.id);
@@ -101,6 +101,14 @@ const permanentDeleteRole = async (req, res) => {
     }
 };
 
-module.exports = { createRole, getRoles, updateRole, deleteRole, getDeletedRoles, restoreRole, permanentDeleteRole };
+module.exports = { 
+    createRole, 
+    getRoles, 
+    updateRole, 
+    deleteRole, 
+    getDeletedRoles, 
+    restoreRole, 
+    permanentDeleteRole 
+};
 
 

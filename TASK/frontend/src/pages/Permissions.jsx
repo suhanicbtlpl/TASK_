@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Edit2, Trash2, Key } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { permissionService } from '../services/api';
-import Table from '../components/shared/Table';
-import { Button, Input, Modal, Card } from '../components/shared/UIComponents';
-import SearchInput from '../components/shared/SearchInput';
-import Pagination from '../components/shared/Pagination';
 import { useAuth } from '../context/AuthContext';
 
+import { Button, Card } from '../components/shared/UIComponents';
+import SearchInput from '../components/shared/SearchInput';
+import Pagination from '../components/shared/Pagination';
+
+import PermissionTable from '../components/permissions/PermissionTable';
+import PermissionModal from '../components/permissions/PermissionModal';
 
 const Permissions = () => {
     const { user } = useAuth();
@@ -20,7 +22,6 @@ const Permissions = () => {
     const [editingPermission, setEditingPermission] = useState(null);
     const [submitting, setSubmitting] = useState(false);
 
-    
     // Pagination & Search State
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(10);
@@ -60,6 +61,17 @@ const Permissions = () => {
         setPage(1);
     };
 
+    const handleOpenModal = (permission = null) => {
+        if (permission) {
+            setEditingPermission(permission);
+            setFormData({ permissionName: permission.permissionName });
+        } else {
+            setEditingPermission(null);
+            setFormData({ permissionName: '' });
+        }
+        setIsModalOpen(true);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSubmitting(true);
@@ -70,22 +82,12 @@ const Permissions = () => {
                 await permissionService.createPermission(formData);
             }
             setIsModalOpen(false);
-            setEditingPermission(null);
-            setFormData({ permissionName: '' });
             fetchPermissions();
         } catch (error) {
             alert(error.response?.data?.message || error.message || 'Error saving permission');
         } finally {
             setSubmitting(false);
         }
-    };
-
-    const handleEdit = (permission) => {
-        setEditingPermission(permission);
-        setFormData({
-            permissionName: permission.permissionName
-        });
-        setIsModalOpen(true);
     };
 
     const handleDelete = async (id) => {
@@ -99,57 +101,33 @@ const Permissions = () => {
         }
     };
 
-    const columns = [
-        { header: 'Permission Name', accessor: 'permissionName' },
-        {
-            header: 'Actions',
-            render: (row) => (
-                <div className="flex gap-2">
-                    {canUpdate && (
-                        <Button variant="secondary" size="sm" onClick={() => handleEdit(row)}>
-                            <Edit2 size={14} />
-                        </Button>
-                    )}
-                    {canDelete && (
-                        <Button variant="danger" size="sm" onClick={() => handleDelete(row._id)}>
-                            <Trash2 size={14} />
-                        </Button>
-                    )}
-                </div>
-            )
-        }
-
-    ];
-
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Permissions</h1>
+                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Permissions</h1>
                     <p className="text-slate-500">Manage dynamic system modules</p>
                 </div>
                 {canCreate && (
-                    <Button onClick={() => {
-                        setEditingPermission(null);
-                        setFormData({ permissionName: '' });
-                        setIsModalOpen(true);
-                    }}>
-                        <Plus size={18} className="mr-2" />
+                    <Button onClick={() => handleOpenModal()} className="gap-2">
+                        <Plus size={18} />
                         Add Permission
                     </Button>
                 )}
             </div>
-
 
             <Card className="p-4">
                 <div className="mb-4">
                     <SearchInput onSearch={handleSearch} placeholder="Search modules..." />
                 </div>
                 
-                <Table 
-                    columns={columns} 
-                    data={permissions} 
+                <PermissionTable 
+                    permissions={permissions} 
                     loading={loading} 
+                    canUpdate={canUpdate} 
+                    canDelete={canDelete} 
+                    onEdit={handleOpenModal} 
+                    onDelete={handleDelete} 
                 />
 
                 <Pagination 
@@ -162,29 +140,15 @@ const Permissions = () => {
                 />
             </Card>
 
-            <Modal
+            <PermissionModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                title={editingPermission ? 'Edit Permission' : 'Add New Permission'}
-            >
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <Input
-                        label="Permission Name"
-                        placeholder="e.g. Staff or Project"
-                        value={formData.permissionName}
-                        onChange={(e) => setFormData({ ...formData, permissionName: e.target.value })}
-                        required
-                    />
-                    <div className="flex justify-end gap-3 mt-6">
-                        <Button variant="secondary" onClick={() => setIsModalOpen(false)} disabled={submitting}>
-                            Cancel
-                        </Button>
-                        <Button type="submit" disabled={submitting}>
-                            {submitting ? (editingPermission ? 'Updating...' : 'Creating...') : (editingPermission ? 'Update' : 'Create') + ' Permission'}
-                        </Button>
-                    </div>
-                </form>
-            </Modal>
+                editingPermission={editingPermission}
+                formData={formData}
+                setFormData={setFormData}
+                onSubmit={handleSubmit}
+                submitting={submitting}
+            />
         </div>
     );
 };
