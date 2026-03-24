@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --foreground-rgb: 0, 0, 0;
+    --background-start-rgb: 214, 219, 220;
+    --background-end-rgb: 255, 255, 255;
+}
+
+body {
+    @apply bg-slate-50 text-slate-900 transition-colors duration-300;
+}
+
+/* ── Dark Mode ─────────────────────────────────────────────────────────────── */
+.dark body {
+    @apply bg-slate-950 text-slate-100;
+}
+
+/* Backgrounds */
+.dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-slate-50 { background-color: #0f172a !important; }
+.dark .bg-slate-100 { background-color: #1e293b !important; }
+
+/* Text */
+.dark .text-slate-900 { color: #f1f5f9 !important; }
+.dark .text-slate-800 { color: #e2e8f0 !important; }
+.dark .text-slate-700 { color: #cbd5e1 !important; }
+.dark .text-slate-600 { color: #94a3b8 !important; }
+.dark .text-slate-500 { color: #64748b !important; }
+
+/* Cards & Panels */
+.dark .bg-white\/80,
+.dark .glass-panel { background-color: rgba(30,41,59,0.9) !important; }
+
+/* Borders */
+.dark .border-slate-200 { border-color: #334155 !important; }
+.dark .border-slate-100 { border-color: #1e293b !important; }
+
+/* Inputs & Selects */
+.dark input:not([type=range]):not([type=checkbox]):not([type=radio]),
+.dark select,
+.dark textarea {
+    background-color: #0f172a !important;
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+}
+
+/* Tables */
+.dark thead,
+.dark .bg-slate-50\/50 { background-color: #1e293b !important; }
+.dark tbody tr { border-color: #334155 !important; }
+.dark tbody tr:hover { background-color: #273549 !important; }
+
+/* Sidebar */
+.dark aside,
+.dark nav { background-color: #0f172a !important; border-color: #1e293b !important; }
+
+/* Cards */
+.dark .card { background-color: #1e293b !important; border-color: #334155 !important; }
+
+/* Modals */
+.dark [role="dialog"],
+.dark .modal-content { background-color: #1e293b !important; border-color: #334155 !important; }
+
+/* Dividers */
+.dark .divide-slate-100 > * { border-color: #1e293b !important; }
+
+/* Scrollbar */
+.dark ::-webkit-scrollbar-thumb { background-color: #334155; }
+.dark ::-webkit-scrollbar-thumb:hover { background-color: #475569; }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    @apply bg-slate-200 rounded-full hover:bg-slate-300 transition-colors;
+}
+
+.glass-panel {
+    @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-xl;
+}
+
+.card {
+    @apply bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200;
+}
