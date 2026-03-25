@@ -4,12 +4,14 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Input, Button } from '../components/shared/UIComponents';
 import { Briefcase, Lock, Mail } from 'lucide-react';
+import RegisterCompanyForm from './RegisterCompanyForm';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showRegister, setShowRegister] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
 
@@ -26,6 +28,10 @@ const Login = () => {
         }
         setLoading(false);
     };
+
+    if (showRegister) {
+        return <RegisterCompanyForm onCancel={() => setShowRegister(false)} />;
+    }
 
     return (
         <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
@@ -85,13 +91,23 @@ const Login = () => {
                         </div>
 
                         <Button
-
                             type="submit"
                             disabled={loading}
                             className="w-full py-3.5 text-base shadow-xl shadow-primary-500/30"
                         >
                             {loading ? 'Signing in...' : 'Sign In'}
                         </Button>
+
+                        <p className="text-slate-400 text-center text-sm mt-4">
+                            Don't have a company?{' '}
+                            <button 
+                                type="button"
+                                onClick={() => setShowRegister(true)}
+                                className="text-primary-400 hover:text-primary-300 font-medium transition-colors"
+                            >
+                                Register
+                            </button>
+                        </p>
                     </form>
                 </div>
 

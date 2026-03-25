@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Plus } from 'lucide-react';
 import { issueService, projectService, taskService, staffService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useProject } from '../context/ProjectContext';
 
 import { Card, Button } from '../components/shared/UIComponents';
 import SearchInput from '../components/shared/SearchInput';
@@ -12,6 +13,7 @@ import IssueModal from '../components/issues/IssueModal';
 
 const Issues = () => {
     const { user } = useAuth();
+    const { selectedProjectId } = useProject();
     const canCreate = user?.role?.permissions?.includes('Issue_CREATE');
     const canUpdate = user?.role?.permissions?.includes('Issue_UPDATE');
     const canDelete = user?.role?.permissions?.includes('Issue_DELETE');
@@ -46,7 +48,9 @@ const Issues = () => {
     const fetchIssues = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await issueService.getIssues({ page, limit, search });
+            const params = { page, limit, search };
+            if (selectedProjectId) params.projectId = selectedProjectId;
+            const res = await issueService.getIssues(params);
             setIssues(res.data || []);
             setTotalPages(res.pages || 1);
             setTotalRecords(res.total || 0);
@@ -55,7 +59,7 @@ const Issues = () => {
         } finally {
             setLoading(false);
         }
-    }, [page, limit, search]);
+    }, [page, limit, search, selectedProjectId]);
 
     const fetchDropdownData = async () => {
         try {
@@ -74,6 +78,10 @@ const Issues = () => {
         fetchIssues();
         fetchDropdownData();
     }, [fetchIssues]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [selectedProjectId]);
 
     useEffect(() => {
         const fetchTasks = async () => {
@@ -120,7 +128,7 @@ const Issues = () => {
                 description: '',
                 status: 'Open',
                 priority: 'Medium',
-                projectId: '',
+                projectId: selectedProjectId || '',
                 taskId: '',
                 assignedTo: ''
             });

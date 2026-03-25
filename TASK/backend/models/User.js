@@ -33,6 +33,10 @@ const userSchema = new mongoose.Schema({
         ref: 'Role',
         required: true
     },
+    company: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Company'
+    },
     isDeleted: {
         type: Boolean,
         default: false

@@ -14,7 +14,7 @@ const activitySchema = new mongoose.Schema({
     module: {
         type: String,
         required: true,
-        enum: ['Staff', 'Role', 'Project', 'Task', 'Document', 'Auth']
+        enum: ['Staff', 'Role', 'Project', 'Task', 'Document', 'Auth','Issue']
     },
     details: {
         type: String

@@ -8,7 +8,9 @@ const { SuccessResponse, ErrorResponse } = require('../utils/Response');
  */
 const getIssues = async (req, res) => {
     try {
-        const result = await IssueService.getAll(req.query);
+        const { page, limit, search, projectId } = req.query;
+        const filter = projectId ? { projectId } : {};
+        const result = await IssueService.getAll({ page, limit, search, filter });
         return SuccessResponse(res, 'Issues retrieved successfully', result);
     } catch (error) {
         return ErrorResponse(res, 'Error fetching issues', error.message);

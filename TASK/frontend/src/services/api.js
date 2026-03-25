@@ -70,6 +70,7 @@ export const authService = {
     updateSettings: (settings) => api.put('/auth/settings', settings).then(formatSingleResponse),
     forgotPassword: (email) => api.post('/auth/forgot-password', { email }).then(formatSingleResponse),
     resetPassword: (token, password) => api.post(`/auth/reset-password/${token}`, { password }).then(formatSingleResponse),
+    registerCompany: (data) => api.post('/auth/register-company', data).then(formatSingleResponse),
 };
 
 // ── STAFF ─────────────────────────────────────────────────────────────────────
@@ -169,6 +170,13 @@ export const notificationService = {
     ),
     markRead: (id) => api.put(`/notifications/${id}/read`).then(formatSingleResponse),
     markAllRead: () => api.put('/notifications/read-all').then(formatSingleResponse),
+};
+
+// ── COMPANIES ────────────────────────────────────────────────────────────────
+export const companyService = {
+    getCompanies: (params) => api.get('/company', { params }).then(formatPaginatedResponse),
+    getCompanyById: (id) => api.get(`/company/${id}`).then(formatSingleResponse),
+    deleteCompany: (id) => api.delete(`/company/${id}`).then(formatSingleResponse),
 };
 
 export default api;

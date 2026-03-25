@@ -16,8 +16,23 @@ class StaffService extends BaseService {
      * @returns {Promise<Object>} The paginated result set.
      */
     async getAll(params) {
+        const { projectId, ...rest } = params;
+        let filter = rest.filter || {};
+
+        if (projectId) {
+            const Project = require('../models/Project');
+            const project = await Project.findById(projectId);
+            if (project) {
+                filter._id = { $in: project.assignedStaff };
+            } else {
+                // If project not found, return empty result
+                filter._id = { $in: [] };
+            }
+        }
+
         return super.getAll({
-            ...params,
+            ...rest,
+            filter,
             searchFields: ['name', 'email', 'mobileNumber'],
             populate: [{ path: 'role', select: 'roleName' }]
         });

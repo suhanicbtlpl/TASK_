@@ -1,28 +1,19 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, X } from 'lucide-react';
 
-const SearchInput = ({ placeholder = "Search...", onSearch, initialValue = "" }) => {
-    const [value, setValue] = useState(initialValue);
+const SearchInput = ({ onSearch, placeholder = "Search..." }) => {
+    const [value, setValue] = useState("");
 
-    const debounce = (func, wait) => {
-        let timeout;
-        return (...args) => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func(...args), wait);
-        };
-    };
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            onSearch(value);
+        }, 500);
 
-    const debouncedSearch = useCallback(
-        debounce((searchValue) => {
-            onSearch(searchValue);
-        }, 500),
-        [onSearch]
-    );
+        return () => clearTimeout(timer);
+    }, [value]);
 
     const handleChange = (e) => {
-        const newValue = e.target.value;
-        setValue(newValue);
-        debouncedSearch(newValue);
+        setValue(e.target.value);
     };
 
     const handleClear = () => {
@@ -32,22 +23,22 @@ const SearchInput = ({ placeholder = "Search...", onSearch, initialValue = "" })
 
     return (
         <div className="relative w-full max-w-sm">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-slate-400" />
-            </div>
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+
             <input
                 type="text"
-                className="block w-full pl-10 pr-10 py-2 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm transition-all"
-                placeholder={placeholder}
                 value={value}
                 onChange={handleChange}
+                placeholder={placeholder}
+                className="w-full pl-10 pr-10 py-2 border rounded-lg"
             />
+
             {value && (
                 <button
                     onClick={handleClear}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center hover:text-slate-600 transition-colors"
+                    className="absolute right-3 top-2.5"
                 >
-                    <X className="h-4 w-4 text-slate-400" />
+                    <X className="h-4 w-4 text-gray-400" />
                 </button>
             )}
         </div>

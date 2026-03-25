@@ -15,6 +15,7 @@ const permissionsToSeed = [
     { name: 'Permission' },
     { name: 'Document' },
     { name: 'Issue' },
+    { name: 'Company' },
 ];
 
 const seedData = async () => {

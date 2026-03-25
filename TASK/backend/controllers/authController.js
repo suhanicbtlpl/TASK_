@@ -3,9 +3,10 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const ActivityService = require('../services/ActivityService');
 const Company = require('../models/Company');
-const CompanyInfo = require('../models/CompanyInfo');
-const { SuccessResponse, ErrorResponse } = require('../utils/Response');
 
+const { SuccessResponse, ErrorResponse } = require('../utils/Response');
+const Role = require("../models/Role")
+const Permission = require("../models/Permission")
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
         expiresIn: '30d',
@@ -210,23 +211,130 @@ const updateSettings = async (req, res) => {
 
 
 
+// const registerCompanyController = async (req, res) => {
+//     try {
+//         const { companyName, address, phone, website, description, ownerName, ownerEmail, ownerPassword, ownerMobile } = req.body;
+
+//         // Check if company exists
+//         const existingCompany = await Company.findOne({companyName });
+//         if (existingCompany) return ErrorResponse(res, 'Company already exists', null, 400);
+
+//         // Check if owner exists
+//         const existingUser = await User.findOne({ email: ownerEmail });
+//         if (existingUser) return ErrorResponse(res, 'Owner email already registered', null, 400);
+
+//         // Find Owner Role
+//         const ownerRole = await Role.findOne({ roleName: 'Owner' });
+//         if (!ownerRole) return ErrorResponse(res, 'Owner role not found', null, 500);
+
+//         // Create Owner User
+//         const user = await User.create({
+//             name: ownerName,
+//             email: ownerEmail,
+//             password: ownerPassword,
+//             mobileNumber: ownerMobile,
+//             role: ownerRole._id
+//         });
+
+//         // Create Company
+//         const company = await Company.create({
+//             name: companyName,
+//             address,
+//             phone,
+//             website,
+//             description,
+//             owner: user._id,
+//             createdBy: user._id
+//         });
+
+//         // Link user to company
+//         user.company = company._id;
+//         await user.save();
+
+//         // Create public CompanyInfo
+//         await CompanyInfo.create({
+//             name: companyName,
+//             address,
+//             phone,
+//             website,
+//             description,
+//             companyId: company._id
+//         });
+
+//         // Log activity
+//         await ActivityService.logActivity(
+//             user._id,
+//             'COMPANY_REGISTER',
+//             'Auth',
+//             `Company registered: ${companyName}`,
+//             user._id,
+//             user.name
+//         );
+
+//         return SuccessResponse(res, 'Company registered successfully', { company, owner: user });
+
+//     } catch (error) {
+//         return ErrorResponse(res, 'Company registration failed', error.message);
+//     }
+// };
+const bcrypt = require('bcryptjs');
+
 const registerCompanyController = async (req, res) => {
     try {
-        const { companyName, address, phone, website, description, ownerName, ownerEmail, ownerPassword, ownerMobile } = req.body;
+        const {
+            companyName,
+            address,
+            phone,
+            website,
+            description,
+            ownerName,
+            ownerEmail,
+            ownerPassword,
+            ownerMobile
+        } = req.body;
 
-        // Check if company exists
-        const existingCompany = await Company.findOne({ name: companyName });
-        if (existingCompany) return ErrorResponse(res, 'Company already exists', null, 400);
+        // 1. Validate required fields
+        if (!companyName || !address || !phone || !ownerName || !ownerEmail || !ownerPassword || !ownerMobile) {
+            return res.status(400).json({
+                success: false,
+                message: "Please provide all required fields"
+            });
+        }
 
-        // Check if owner exists
+        // 2. Check if companyName already exists
+        const existingCompany = await Company.findOne({ companyName });
+        if (existingCompany) {
+            return res.status(400).json({
+                success: false,
+                message: "Company name already exists"
+            });
+        }
+
+        // 3. Check if ownerEmail already exists
         const existingUser = await User.findOne({ email: ownerEmail });
-        if (existingUser) return ErrorResponse(res, 'Owner email already registered', null, 400);
+        if (existingUser) {
+            return res.status(400).json({
+                success: false,
+                message: "Owner email already registered"
+            });
+        }
 
-        // Find Owner Role
-        const ownerRole = await Role.findOne({ roleName: 'Owner' });
-        if (!ownerRole) return ErrorResponse(res, 'Owner role not found', null, 500);
+        // 4. Find Role with roleName = "Owner"
+        let ownerRole = await Role.findOne({ roleName: 'Owner' });
+        if (!ownerRole) {
+            // Assign default permissions to Owner if role is created
+            const permissions = await Permission.find({ isDeleted: false });
+            ownerRole = await Role.create({
+                roleName: 'Owner',
+                permissions: permissions.map(p => ({
+                    permission: p._id,
+                    actions: { create: true, read: true, update: true, delete: true }
+                }))
+            });
+        }
 
-        // Create Owner User
+        // 6. Create User with Owner role 
+        // Note: Password hashing is handled by the User model's pre-save hook
         const user = await User.create({
             name: ownerName,
             email: ownerEmail,
@@ -235,9 +343,9 @@ const registerCompanyController = async (req, res) => {
             role: ownerRole._id
         });
 
-        // Create Company
+        // 7. Create Company and link owner
         const company = await Company.create({
-            name: companyName,
+            companyName,
             address,
             phone,
             website,
@@ -246,35 +354,36 @@ const registerCompanyController = async (req, res) => {
             createdBy: user._id
         });
 
-        // Link user to company
+        // 8. Update user.company
         user.company = company._id;
         await user.save();
 
-        // Create public CompanyInfo
-        await CompanyInfo.create({
-            name: companyName,
-            address,
-            phone,
-            website,
-            description,
-            companyId: company._id
+        // Bonus: Generate JWT token
+        const token = generateToken(user._id);
+
+        // 9. Return success response
+        return res.status(201).json({
+            success: true,
+            message: "Company registered successfully",
+            data: {
+                company,
+                owner: {
+                    _id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    mobileNumber: user.mobileNumber,
+                    role: ownerRole.roleName,
+                    token: token
+                }
+            }
         });
 
-        // Log activity
-        await ActivityService.logActivity(
-            user._id,
-            'COMPANY_REGISTER',
-            'Auth',
-            `Company registered: ${companyName}`,
-            user._id,
-            user.name
-        );
-
-        return SuccessResponse(res, 'Company registered successfully', { company, owner: user });
-
     } catch (error) {
-        return ErrorResponse(res, 'Company registration failed', error.message);
+        console.error("REGISTER ERROR:", error);
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Internal Server Error"
+        });
     }
 };
-
 module.exports = { loginUser, getUserProfile, forgotPassword, resetPassword, updateProfile, changePassword, updateSettings ,registerCompanyController};

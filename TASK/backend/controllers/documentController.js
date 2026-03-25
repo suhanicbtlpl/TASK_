@@ -9,8 +9,9 @@ const fs = require('fs');
  */
 const getDocuments = async (req, res) => {
     try {
-        const { page, limit, search } = req.query;
-        const result = await DocumentService.getAll({ page, limit, search });
+        const { page, limit, search, projectId } = req.query;
+        const filter = projectId ? { projectId } : {};
+        const result = await DocumentService.getAll({ page, limit, search, filter });
         return SuccessResponse(res, 'Documents retrieved successfully', result);
     } catch (error) {
         return ErrorResponse(res, 'Error fetching documents', error.message);

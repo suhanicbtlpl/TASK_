@@ -9,10 +9,9 @@ const { SuccessResponse, ErrorResponse } = require('../utils/Response');
 const getTasks = async (req, res) => {
     try {
         const { page, limit, search, projectId } = req.query;
-        const filter = {};
-        if (projectId) filter.projectId = projectId;
+        const filter = projectId ? { projectId } : {};
 
-        const result = await TaskService.getAll({ page, limit, search, ...filter });
+        const result = await TaskService.getAll({ page, limit, search, filter });
         return SuccessResponse(res, 'Tasks retrieved successfully', result);
     } catch (error) {
         return ErrorResponse(res, 'Error fetching tasks', error.message);

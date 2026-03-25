@@ -6,12 +6,15 @@ import { Button, Card } from '../components/shared/UIComponents';
 import SearchInput from '../components/shared/SearchInput';
 import Pagination from '../components/shared/Pagination';
 import { useAuth } from '../context/AuthContext';
+import { useProject } from '../context/ProjectContext';
+
 
 import DocumentTable from '../components/documents/DocumentTable';
 import { DocumentFormModal, VersionHistoryModal, UploadVersionModal } from '../components/documents/DocumentModals';
 
 const Documents = () => {
     const { user } = useAuth();
+    const { selectedProjectId } = useProject();
     const canCreate = user?.role?.permissions?.includes('Document_CREATE');
     const canUpdate = user?.role?.permissions?.includes('Document_UPDATE');
     const canDelete = user?.role?.permissions?.includes('Document_DELETE');
@@ -55,7 +58,9 @@ const Documents = () => {
     const fetchDocuments = useCallback(async () => {
         try {
             setLoading(true);
-            const res = await documentService.getDocuments({ page, limit, search });
+            const params = { page, limit, search };
+            if (selectedProjectId) params.projectId = selectedProjectId;
+            const res = await documentService.getDocuments(params);
             setDocuments(res.data || []);
             setTotalPages(res.pages || 1);
             setTotalRecords(res.total || 0);
@@ -64,12 +69,16 @@ const Documents = () => {
         } finally {
             setLoading(false);
         }
-    }, [page, limit, search]);
+    }, [page, limit, search, selectedProjectId]);
 
     useEffect(() => {
         fetchDocuments();
         fetchDropdownData();
     }, [fetchDocuments]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [selectedProjectId]);
 
     const handleSearch = (searchValue) => {
         setSearch(searchValue);
@@ -169,7 +178,7 @@ const Documents = () => {
         setFormData({ 
             title: '', 
             description: '', 
-            projectId: '', 
+            projectId: selectedProjectId || '', 
             category: 'General', 
             tags: '', 
             file: null 

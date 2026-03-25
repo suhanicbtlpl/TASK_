@@ -42,8 +42,41 @@ const registerCompany = [
     body('ownerMobile', 'Owner mobile number is required').notEmpty()
 ];
 
+// Staff validation rules
+const staffRules = [
+    body('name', 'Name is required').notEmpty(),
+    body('email', 'Valid email is required').isEmail(),
+    body('password', 'Password must be at least 6 characters').isLength({ min: 6 }),
+    body('mobileNumber', 'Mobile number is required').notEmpty(),
+    body('role', 'Role is required').notEmpty()
+];
+
+// Project validation rules
+const projectRules = [
+    body('projectName', 'Project name is required').notEmpty(),
+    body('clientName', 'Client name is required').notEmpty(),
+    body('startDate', 'Start date is required').notEmpty(),
+    body('projectManager', 'Project manager is required').notEmpty()
+];
+
+// Task validation rules
+const taskRules = [
+    body('taskTitle', 'Task title is required').notEmpty(),
+    body('projectId', 'Project ID is required').notEmpty(),
+    body('assignedTo', 'Assigned staff is required').notEmpty()
+];
+
+// Document validation rules
+const documentRules = [
+    body('title', 'Document title is required').notEmpty()
+];
+
 module.exports = {
     validate,
     authRules,
-    registerCompany
+    registerCompany,
+    staffRules,
+    projectRules,
+    taskRules,
+    documentRules
 };

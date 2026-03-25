@@ -10,7 +10,8 @@ import {
     FileText,
     Trash2,
     Settings,
-    AlertCircle
+    AlertCircle,
+    Building2
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -25,6 +26,7 @@ const Sidebar = () => {
         { name: 'Issues', icon: AlertCircle, path: '/issues', permission: 'Issue_READ' },
         { name: 'Roles', icon: ShieldCheck, path: '/roles', permission: 'Role_READ' },
         { name: 'Permissions', icon: Key, path: '/permissions', permission: 'Permission_READ' },
+        { name: 'Companies', icon: Building2, path: '/company', permission: 'Company_READ' },
         { name: 'Documents', icon: FileText, path: '/documents', permission: 'Document_READ' },
         { name: 'Recycle Bin', icon: Trash2, path: '/recycle-bin', permission: 'Role_READ' },
         { name: 'Settings', icon: Settings, path: '/settings', permission: null },

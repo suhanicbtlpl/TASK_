@@ -91,12 +91,7 @@ const Dashboard = () => {
                 ))}
             </div>
 
-            <Card 
-                title="Recent Activity" 
-                action={<button className="text-primary-600 text-sm font-semibold hover:underline">View All</button>}
-            >
-                <ActivityFeed activities={activities} />
-            </Card>
+            {/*      */}
         </div>
     );
 };

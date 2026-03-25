@@ -15,8 +15,10 @@ import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import Companies from './pages/Companies';
 
 import AdminLayout from './layouts/AdminLayout';
+import { ProjectProvider } from './context/ProjectContext';
 
 
 
@@ -35,77 +37,84 @@ const ProtectedRoute = ({ children, requiredPermission }) => {
 
 function App() {
     return (
-        <Router>
-            <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <ProjectProvider>
+            <Router>
+                <Routes>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password/:token" element={<ResetPassword />} />
 
 
-                <Route path="/" element={
-                    <ProtectedRoute>
-                        <AdminLayout />
-                    </ProtectedRoute>
-                }>
-                    <Route index element={<Dashboard />} />
-                    <Route path="staff" element={
-                        <ProtectedRoute requiredPermission="Staff_READ">
-                            <Staff />
-                        </ProtectedRoute>
-                    } />
-                    <Route path="roles" element={
-                        <ProtectedRoute requiredPermission="Role_READ">
-                            <Roles />
-                        </ProtectedRoute>
-                    } />
-                    <Route path="projects" element={
-                        <ProtectedRoute requiredPermission="Project_READ">
-                            <Projects />
-                        </ProtectedRoute>
-                    } />
-                    <Route path="tasks" element={
-                        <ProtectedRoute requiredPermission="Task_READ">
-                            <Tasks />
-                        </ProtectedRoute>
-                    } />
-                    <Route path="permissions" element={
-                        <ProtectedRoute requiredPermission="Permission_READ">
-                            <Permissions />
-                        </ProtectedRoute>
-                    } />
-                    <Route path="documents" element={
-                        <ProtectedRoute requiredPermission="Document_READ">
-                            <Documents />
-                        </ProtectedRoute>
-                    } />
-                    <Route path="issues" element={
-                        <ProtectedRoute requiredPermission="Issue_READ">
-                            <Issues />
-                        </ProtectedRoute>
-                    } />
-                    <Route path="recycle-bin" element={
-                        <ProtectedRoute requiredPermission="Role_READ">
-                            <RecycleBin />
-                        </ProtectedRoute>
-                    } />
-                    <Route path="profile" element={
+                    <Route path="/" element={
                         <ProtectedRoute>
-                            <Profile />
+                            <AdminLayout />
                         </ProtectedRoute>
-                    } />
-                    <Route path="settings" element={
-                        <ProtectedRoute>
-                            <Settings />
-                        </ProtectedRoute>
-                    } />
-                </Route>
+                    }>
+                        <Route index element={<Dashboard />} />
+                        <Route path="staff" element={
+                            <ProtectedRoute requiredPermission="Staff_READ">
+                                <Staff />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="roles" element={
+                            <ProtectedRoute requiredPermission="Role_READ">
+                                <Roles />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="projects" element={
+                            <ProtectedRoute requiredPermission="Project_READ">
+                                <Projects />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="tasks" element={
+                            <ProtectedRoute requiredPermission="Task_READ">
+                                <Tasks />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="permissions" element={
+                            <ProtectedRoute requiredPermission="Permission_READ">
+                                <Permissions />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="company" element={
+                            <ProtectedRoute requiredPermission="Company_READ">
+                                <Companies />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="documents" element={
+                            <ProtectedRoute requiredPermission="Document_READ">
+                                <Documents />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="issues" element={
+                            <ProtectedRoute requiredPermission="Issue_READ">
+                                <Issues />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="recycle-bin" element={
+                            <ProtectedRoute requiredPermission="Role_READ">
+                                <RecycleBin />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="profile" element={
+                            <ProtectedRoute>
+                                <Profile />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="settings" element={
+                            <ProtectedRoute>
+                                <Settings />
+                            </ProtectedRoute>
+                        } />
+                    </Route>
 
 
 
 
-                <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-        </Router>
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+            </Router>
+        </ProjectProvider>
     );
 }
 

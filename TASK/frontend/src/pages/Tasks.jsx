@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Plus } from 'lucide-react';
 import { taskService, projectService, staffService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useProject } from '../context/ProjectContext';
 
 import { Card, Button } from '../components/shared/UIComponents';
 import SearchInput from '../components/shared/SearchInput';
@@ -12,6 +13,7 @@ import TaskModal from '../components/tasks/TaskModal';
 
 const Tasks = () => {
     const { user } = useAuth();
+    const { selectedProjectId } = useProject();
     const canCreate = user?.role?.permissions?.includes('Task_CREATE');
     const canUpdate = user?.role?.permissions?.includes('Task_UPDATE');
     const canDelete = user?.role?.permissions?.includes('Task_DELETE');
@@ -22,7 +24,6 @@ const Tasks = () => {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTask, setEditingTask] = useState(null);
-    const [filterProject, setFilterProject] = useState('');
     const [submitting, setSubmitting] = useState(false);
     
     // Pagination & Search State
@@ -62,7 +63,7 @@ const Tasks = () => {
         setLoading(true);
         try {
             const params = { page, limit, search };
-            if (filterProject) params.projectId = filterProject;
+            if (selectedProjectId) params.projectId = selectedProjectId;
 
             const res = await taskService.getTasks(params);
             setTasks(res.data || []);
@@ -73,12 +74,16 @@ const Tasks = () => {
         } finally {
             setLoading(false);
         }
-    }, [page, limit, search, filterProject]);
+    }, [page, limit, search, selectedProjectId]);
 
     useEffect(() => {
         fetchTasks();
         fetchDropdownData();
     }, [fetchTasks]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [selectedProjectId]);
 
     const handleSearch = (searchValue) => {
         setSearch(searchValue);
@@ -108,7 +113,7 @@ const Tasks = () => {
             setFormData({
                 taskTitle: '',
                 description: '',
-                projectId: filterProject || '',
+                projectId: selectedProjectId || '',
                 assignedTo: '',
                 status: 'To Do',
                 priority: 'Medium',
@@ -188,19 +193,6 @@ const Tasks = () => {
                     <p className="text-slate-500">Track and manage task progress across projects</p>
                 </div>
                 <div className="flex gap-3">
-                    <select
-                        className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:border-primary-500"
-                        value={filterProject}
-                        onChange={(e) => {
-                            setFilterProject(e.target.value);
-                            setPage(1);
-                        }}
-                    >
-                        <option value="">All Projects</option>
-                        {projects.map(p => (
-                            <option key={p._id} value={p._id}>{p.projectName}</option>
-                        ))}
-                    </select>
                     {canCreate && (
                         <Button onClick={() => handleOpenModal()} className="gap-2">
                             <Plus size={18} />

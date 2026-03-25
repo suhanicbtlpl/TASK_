@@ -10,8 +10,8 @@ const { SuccessResponse, ErrorResponse } = require('../utils/Response');
  */
 const getStaff = async (req, res) => {
     try {
-        const { page, limit, search } = req.query;
-        const result = await StaffService.getAll({ page, limit, search });
+        const { page, limit, search, project } = req.query;
+        const result = await StaffService.getAll({ page, limit, search, projectId: project });
         return SuccessResponse(res, 'Staff retrieved successfully', result);
     } catch (error) {
         return ErrorResponse(res, 'Error fetching staff', error.message);
